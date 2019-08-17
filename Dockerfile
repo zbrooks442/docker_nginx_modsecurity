@@ -27,8 +27,8 @@ RUN cd /opt && \
     git submodule update && \
     ./build.sh && \
     ./configure && \
-    make && \
-    make install
+    make >/dev/null 2>&1 && \
+    make install >/dev/null 2>&1
 
 RUN strip /usr/local/modsecurity/bin/* /usr/local/modsecurity/lib/*.a /usr/local/modsecurity/lib/*.so*
 
@@ -48,6 +48,7 @@ RUN apt-get update -qq && \
     curl -fsSL https://nginx.org/keys/nginx_signing.key | apt-key add - && \
     apt update -qq && \
     apt-get install -y nginx \
+	apt-utils \
 	autoconf \
 	automake \
 	build-essential \
@@ -74,9 +75,9 @@ RUN cd /opt && \
 	mv nginx-$(cat version.txt | grep nginx | awk '{print $3}' | tr '/' ' ' | awk '{print $2}') nginx_for_module && \
 	cd nginx_for_module && \
 	./configure --with-compat --add-dynamic-module=../ModSecurity-nginx && \
-	make && \
-	make install && \
-	make modules && \
+	make >/dev/null 2>&1 && \
+	make install >/dev/null 2>&1 && \
+	make modules >/dev/null 2>&1 && \
 	cp /opt/nginx_for_module/objs/ngx_http_modsecurity_module.so /etc/nginx/modules
 
 # Configure the modsecurity rulesets
@@ -105,13 +106,21 @@ COPY --from=nginx-build /opt/modsecurity.d/ /etc/modsecurity.d/
 # Required dependencies for ModSecurity
 
 RUN apt-get update -qq && \
-	apt-get install -y libcurl4-openssl-dev \
+	apt-get install -y apt-utils \
+	autoconf \
+	automake \
+	build-essential \
+	git \
+	libcurl4-openssl-dev \
 	libgeoip-dev \
 	liblmdb-dev \
 	libpcre++-dev \
 	libtool \
 	libxml2-dev \
-	libyajl-dev && \
+	libyajl-dev \
+	pkgconf \
+	wget \
+	zlib1g-dev && \
 	apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Final Configuration
@@ -119,5 +128,6 @@ RUN apt-get update -qq && \
 RUN ldconfig && \
 	sed -i 's/user  nginx/load_module \/etc\/nginx\/modules\/ngx_http_modsecurity_module.so;\n\nuser  nginx/g' /etc/nginx/nginx.conf && \
 	sed -i 's/http {/http {\n    modsecurity on;\n    modsecurity_rules_file \/etc\/modsecurity.d\/include.conf;    \n/g' /etc/nginx/nginx.conf && \
+	sed -i 's/SecAuditLog \/var\/log\/modsec_audit.log/SecAuditLog \/var\/log\/modsec\/modsec_audit.log/g' /etc/modsecurity.d/modsecurity.conf && \
 	chown -R www-data:www-data /etc/nginx && \
 	chown -R www-data:www-data /etc/modsecurity.d
