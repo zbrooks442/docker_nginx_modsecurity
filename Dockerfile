@@ -128,6 +128,8 @@ RUN apt-get update -qq && \
 RUN ldconfig && \
 	sed -i 's/user  nginx/load_module \/etc\/nginx\/modules\/ngx_http_modsecurity_module.so;\n\nuser  nginx/g' /etc/nginx/nginx.conf && \
 	sed -i 's/http {/http {\n    modsecurity on;\n    modsecurity_rules_file \/etc\/modsecurity.d\/include.conf;    \n/g' /etc/nginx/nginx.conf && \
+	mkdir -p /var/log/modsec && \
+	touch /var/log/modsec/modsec_audit.log && \
 	sed -i 's/SecAuditLog \/var\/log\/modsec_audit.log/SecAuditLog \/var\/log\/modsec\/modsec_audit.log/g' /etc/modsecurity.d/modsecurity.conf && \
 	chown -R www-data:www-data /etc/nginx && \
 	chown -R www-data:www-data /etc/modsecurity.d
