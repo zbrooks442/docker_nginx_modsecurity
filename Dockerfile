@@ -93,7 +93,11 @@ RUN mkdir /opt/modsecurity.d && \
 	echo include \"/etc/modsecurity.d/owasp-modsecurity-crs/rules/*.conf\" >> include.conf && \
 	git clone https://github.com/SpiderLabs/owasp-modsecurity-crs.git && \
 	cd owasp-modsecurity-crs && \
-	cp crs-setup.conf.example crs-setup.conf
+	# It's terrible, I know
+	cat crs-setup.conf.example | \
+	perl -pe 's/\n/TEMPNEWLINESTR/g' | \
+	perl -pe 's/#SecAction \\TEMPNEWLINESTR# \"id:900130\,\\TEMPNEWLINESTR#  phase:1\,\\TEMPNEWLINESTR#  nolog\,\\TEMPNEWLINESTR#  pass\,\\TEMPNEWLINESTR#  t:none\,\\TEMPNEWLINESTR#  setvar:tx\.crs_exclusions_cpanel=1\,\\TEMPNEWLINESTR#  setvar:tx\.crs_exclusions_drupal=1\,\\TEMPNEWLINESTR#  setvar:tx\.crs_exclusions_dokuwiki=1\,\\TEMPNEWLINESTR#  setvar:tx\.crs_exclusions_nextcloud=1\,\\TEMPNEWLINESTR#  setvar:tx\.crs_exclusions_wordpress=1\,\\TEMPNEWLINESTR#  setvar:tx\.crs_exclusions_xenforo=1\"/SecAction \\TEMPNEWLINESTR \"id:900130\,\\TEMPNEWLINESTR  phase:1\,\\TEMPNEWLINESTR  nolog\,\\TEMPNEWLINESTR  pass\,\\TEMPNEWLINESTR  t:none\,\\TEMPNEWLINESTR  setvar:tx\.crs_exclusions_wordpress=1\"/g' \
+	| perl -pe 's/TEMPNEWLINESTR/\n/g' > crs-setup.conf
 
 FROM nginx:latest AS nginx-final
 
